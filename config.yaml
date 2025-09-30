@@ -1,0 +1,14 @@
+server:
+  addr: ":8080"
+  admin_token: "secret123"
+
+postgres:
+  dsn: "postgres://postgres:postgres@postgres:5432/webdb?sslmode=disable"
+
+redis:
+  addr: "redis:6379"
+  password: ""
+  db: 0
+
+security:
+  token_ttl_seconds: 3600
