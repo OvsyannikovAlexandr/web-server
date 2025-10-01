@@ -100,6 +100,8 @@ security:
 
 **POST** `/api/docs`
 
+Доступ осуществялеться через поле Authorization: Bearer <token_uuid_generated>
+
 **Вход (multipart form):**
 - `meta` — JSON с параметрами:
   ```json
@@ -127,7 +129,9 @@ security:
 
 ### 4. Получение списка документов
 
-**GET/HEAD** `/api/docs?token=...&login=...&key=...&value=...&limit=...`
+**GET/HEAD** `/api/docs?login=...&key=...&value=...&limit=...`
+
+Доступ осуществялеться через поле Authorization: Bearer <token_uuid_generated>
 
 **Выход:**
 ```json
@@ -182,7 +186,7 @@ security:
 **Выход:**
 ```json
 {
-  "response": { "qwdj1q4o34u34ih759ou1": true }
+  "response": { "<token_uuid_generated>": true }
 }
 ```
 
