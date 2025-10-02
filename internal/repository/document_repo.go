@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"web-server/internal/models"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -26,12 +27,22 @@ func NewDocumentRepository(db *pgxpool.Pool) DocumentRepository {
 }
 
 func (r *documentRepo) Upload(ctx context.Context, d *models.Document) error {
+	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback(ctx)
+		}
+	}()
+
 	grantB, _ := json.Marshal(d.Grants)
-	_, err := r.db.Exec(ctx, `
+	_, err = tx.Exec(ctx, `
 		INSERT INTO documents (id, owner, name, mime, file, public, created_at, grants, json)
 		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
 	`, d.ID, d.Owner, d.Name, d.Mime, d.File, d.Public, d.CreatedAt, grantB, d.JSONRaw)
-	return err
+	return tx.Commit(ctx)
 }
 
 func (r *documentRepo) GetByID(ctx context.Context, id string) (*models.Document, error) {
@@ -53,14 +64,24 @@ func (r *documentRepo) GetByID(ctx context.Context, id string) (*models.Document
 }
 
 func (r *documentRepo) Delete(ctx context.Context, id string) error {
-	cmd, err := r.db.Exec(ctx, `DELETE FROM documents WHERE id=$1`, id)
+	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback(ctx)
+		}
+	}()
+	cmd, err := tx.Exec(ctx, `DELETE FROM documents WHERE id=$1`, id)
 	if err != nil {
 		return err
 	}
 	if cmd.RowsAffected() == 0 {
+		tx.Rollback(ctx)
 		return errors.New("not found")
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
 func (r *documentRepo) List(ctx context.Context, viewer, key, value string, limit int) ([]models.Document, error) {
